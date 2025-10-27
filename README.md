@@ -8,6 +8,7 @@ This project is a lecture management system built with the following technologie
 - **Frontend**: React
 - **Backend**: Django
 - **Database**: PostgreSQL
+- **LLM Support**: Local (Ollama) and External APIs (OpenAI, Google Gemini, Custom endpoints)
 
 ## Project Structure
 
@@ -67,9 +68,35 @@ The project is organized as follows:
 
 3. You can access the frontend at `http://localhost:3000` and the backend at `http://localhost:8000`.
 
-4. First, access te backend admin panel (`http://localhost:8000/admin/`admin/password) and submit local llm in Llms model at side var.
-  - Name : hogehoge (free name but required)
-  - Model : gemma3:270m (required)
+4. Configure an LLM model in the backend admin panel (`http://localhost:8000/admin/` - admin/password):
+   
+   **For Local Ollama:**
+   - Provider: Ollama
+   - Name: Any name (e.g., "Local Gemma")
+   - Model: gemma3:270m (or any model available in your Ollama instance)
+   - Base URL: Leave empty (defaults to http://ollama:11434)
+   - API Key: Leave empty
+   
+   **For OpenAI:**
+   - Provider: OpenAI
+   - Name: Any name (e.g., "GPT-4")
+   - Model: gpt-4 (or gpt-3.5-turbo, etc.)
+   - Base URL: Leave empty (defaults to https://api.openai.com/v1)
+   - API Key: Your OpenAI API key (required)
+   
+   **For Google Gemini:**
+   - Provider: Gemini
+   - Name: Any name (e.g., "Gemini Pro")
+   - Model: gemini-pro (or gemini-1.5-flash, etc.)
+   - Base URL: Leave empty (defaults to https://generativelanguage.googleapis.com/v1beta)
+   - API Key: Your Google API key (required)
+   
+   **For Custom OpenAI-Compatible API:**
+   - Provider: Custom
+   - Name: Any name
+   - Model: Model name supported by your API
+   - Base URL: Your API endpoint (required)
+   - API Key: Your API key (optional, depending on your endpoint)
 
 5. You can select model in menu (:3000) and chat!
 
