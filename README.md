@@ -1,4 +1,5 @@
 # sandbox-special-software-plactice
+what's a hogehoge
 Repository for KSU special software practice 
 
 # Lecture
