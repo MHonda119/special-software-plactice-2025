@@ -3,6 +3,10 @@ import requests
 from dataclasses import dataclass
 
 
+# Default timeout for API requests (in seconds)
+DEFAULT_TIMEOUT = 120
+
+
 @dataclass
 class ChatResult:
     content: str
@@ -33,7 +37,7 @@ class OllamaClient:
             "options": {**self.default_params, **(options or {})},
             "stream": False,
         }
-        r = requests.post(url, json=payload, timeout=120)
+        r = requests.post(url, json=payload, timeout=DEFAULT_TIMEOUT)
         r.raise_for_status()
         data = r.json()
         content = data.get("message", {}).get("content", "")
@@ -70,10 +74,14 @@ class OpenAIClient:
             **self.default_params,
             **(options or {}),
         }
-        r = requests.post(url, json=payload, headers=headers, timeout=120)
+        r = requests.post(url, json=payload, headers=headers, timeout=DEFAULT_TIMEOUT)
         r.raise_for_status()
         data = r.json()
-        content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+        choices = data.get("choices", [])
+        if not choices:
+            content = ""
+        else:
+            content = choices[0].get("message", {}).get("content", "")
         usage = data.get("usage", {})
         return ChatResult(content=content, usage=usage)
 
@@ -102,9 +110,15 @@ class GeminiClient:
         # Convert messages to Gemini format
         contents = []
         for msg in messages:
-            role = "user" if msg["role"] in ["user", "system"] else "model"
+            role = msg["role"]
+            if role in ["user", "system"]:
+                gemini_role = "user"
+            elif role == "assistant":
+                gemini_role = "model"
+            else:
+                raise ValueError(f"Unsupported role for Gemini: {role}")
             contents.append({
-                "role": role,
+                "role": gemini_role,
                 "parts": [{"text": msg["content"]}]
             })
         
@@ -113,15 +127,19 @@ class GeminiClient:
             **self.default_params,
             **(options or {}),
         }
-        r = requests.post(url, json=payload, params=params, timeout=120)
+        r = requests.post(url, json=payload, params=params, timeout=DEFAULT_TIMEOUT)
         r.raise_for_status()
         data = r.json()
         
         candidates = data.get("candidates", [])
-        if candidates:
-            content = candidates[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-        else:
+        if not candidates:
             content = ""
+        else:
+            parts = candidates[0].get("content", {}).get("parts", [])
+            if parts:
+                content = parts[0].get("text", "")
+            else:
+                content = ""
         
         usage_metadata = data.get("usageMetadata", {})
         usage = {
@@ -145,6 +163,7 @@ def build_llm_client(llm):
         # For CUSTOM provider, assume OpenAI-compatible API
         if not llm.base_url:
             raise ValueError("CUSTOM provider requires a base_url")
+        # Allow empty API key for custom endpoints that don't require authentication
         return OpenAIClient(llm.base_url, llm.model, llm.api_key or "", llm.extra)
     else:  # Default to OLLAMA
         return OllamaClient(llm.base_url, llm.model, llm.extra)
