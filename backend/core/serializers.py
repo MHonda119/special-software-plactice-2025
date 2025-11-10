@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from .models import LLM, ChatSession, Message
 
 
@@ -29,6 +30,15 @@ class LLMCreateUpdateSerializer(serializers.ModelSerializer):
             "extra",
             "is_active",
         ]
+
+    def validate(self, attrs):
+        provider = attrs.get("provider") or getattr(self.instance, "provider", None)
+        api_key = attrs.get("api_key") or getattr(self.instance, "api_key", None)
+        if provider in {"OPENAI", "GEMINI"} and not api_key:
+            raise ValidationError(
+                {"api_key": ("This field is required for the selected provider.")}
+            )
+        return attrs
 
 
 class ChatSessionCreateSerializer(serializers.ModelSerializer):
